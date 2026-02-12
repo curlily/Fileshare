@@ -1,0 +1,18 @@
+[package]
+name = "FilesharingApp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.8"
+serde_json = "1.0.149"
+tokio = { version = "1.49.0", features = ["full"] }
+sqlx = { version = "0.8.6", features = [ "runtime-tokio", "tls-rustls-ring-webpki", "postgres", "chrono", "uuid" ] }
+dotenv = "0.15.0"
+serde = { version = "1.0.228", features = ["derive"] }
+chrono = { version = "0.4.43", features = ["serde"] }
+uuid = { version = "1.20.0", features = ["serde", "v4"] }
+toml = "0.9.12+spec-1.1.0"
+anyhow = "1.0"
+tokio-util = { version = "0.7.18", features = ["io"] }
+tower-http = "0.6.8"
