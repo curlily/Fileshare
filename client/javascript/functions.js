@@ -11,8 +11,13 @@ async function loadDirectory() {
     const table = document.getElementById("file-table-body");
     table.innerHTML = "";
 
+    if(entries.length === 0) {
+        table.append(get_placeholder_row());
+        return;
+    }
+
     for (const entry of entries) {
-        table.appendChild(get_entry_row(entry));
+        table.append(get_entry_row(entry));
     }
 
     function build_path_nav(path) {
@@ -23,22 +28,31 @@ async function loadDirectory() {
         path_parts.shift();
         path_div.innerHTML = ""
 
-        for (const path_part of path_parts) {
+        if(path !== "/") {
+            path_div.append(get_path_part("..", "/"));
+        }
 
-            const a = document.createElement("a");
-            a.innerText = path_part
+        for (const path_part of path_parts) {
 
             const index = path_parts.indexOf(path_part);
             const target = path_parts.slice(0, index + 1).join("/");
 
-            a.onclick = () => {
-                history.pushState({}, "", target);
-                loadDirectory();
-            }
-
             path_div.append(" / ");
-            path_div.append(a);
+            path_div.append(get_path_part(path_part, target));
         }
+    }
+
+    function get_path_part(name, target) {
+
+        const a = document.createElement("a");
+
+        a.innerText = name
+        a.onclick = () => {
+            history.pushState({}, "", target);
+            loadDirectory();
+        }
+
+        return a;
     }
 
     function get_entry_row(entry) {
@@ -67,6 +81,18 @@ async function loadDirectory() {
                 window.location.href = `api/files/${path}/${entry.name}`;
             }
         };
+
+        return tr;
+    }
+
+    function get_placeholder_row() {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+
+        td.innerText = "Empty directory";
+        td.setAttribute("colspan", "4");
+        tr.classList.add("placeholder_row");
+        tr.append(td);
 
         return tr;
     }

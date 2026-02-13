@@ -2,7 +2,7 @@ use std::sync::Arc;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Response;
-use crate::AppState;
+use crate::structs::AppState;
 use crate::services::filesystem;
 
 pub async fn handle_root(

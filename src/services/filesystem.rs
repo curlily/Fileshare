@@ -98,3 +98,10 @@ pub fn resolve_safe_path(root: &Path, user_path: &str) -> Result<PathBuf, Status
 
     Ok(canonical)
 }
+
+pub fn normalize_path(input: &str) -> String {
+    input
+        .replace('\\', "/")
+        .trim_start_matches('/')
+        .to_string()
+}

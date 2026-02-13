@@ -1,3 +1,4 @@
+use std::fs::Metadata;
 use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::Context;
@@ -9,13 +10,12 @@ mod handlers;
 mod config;
 mod services;
 pub mod structs;
+mod meta;
 
 use config::load_or_create_config;
 use crate::config::Config;
-
-pub struct AppState {
-    config: Config,
-}
+use crate::meta::load_or_create_meta;
+use crate::structs::AppState;
 
 #[tokio::main]
 async fn main() {
@@ -30,6 +30,10 @@ async fn main() {
         .display()
         .to_string();
 
+    let mut meta = load_or_create_meta("Meta.toml")
+        .context("Loading meta file")
+        .unwrap();
+
     let address = format!("{}:{}", config.server.host, config.server.port.to_string());
 
     // build our application with a single route
@@ -42,7 +46,7 @@ async fn main() {
             ServeDir::new("client")
                 .fallback(ServeFile::new("client/index.html"))
         )
-        .with_state(Arc::new(AppState { config }));
+        .with_state(Arc::new(AppState { config, meta }));
 
     // run our app with hyper, listening globally on configured address
     let listener = tokio::net::TcpListener::bind(&address).await.unwrap();

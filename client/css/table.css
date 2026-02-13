@@ -20,13 +20,17 @@ tbody tr:nth-child(even) {
     background-color: #fafafa;  /* Light alternate row */
 }
 
-tbody tr:hover {
+tbody tr:hover:not(.placeholder_row){
     background-color: #eeeeff;
     cursor: pointer;
 }
 
 tbody tr {
     transition: background-color 0.5s ease;
+}
+
+tbody tr.placeholder_row td {
+    text-align: center;
 }
 
 th, td {
