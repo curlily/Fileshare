@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>📁 Shared Files</title>
+        <base href="/">
+        <link rel="stylesheet" href="css/font.css" />
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="css/table.css" />
+    </head>
+    <body>
+        <div id="root">
+            <h1 id="title" onclick="window.location.href = ''">📁 Shared Files</h1>
+            <div class="centered-wrapper">
+                <div id="path"></div>
+                <table id="file-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Created</th>
+                            <th>Changed</th>
+                            <th>Size</th>
+                        </tr>
+                    </thead>
+                    <tbody id="file-table-body"></tbody>
+                </table>
+            </div>
+
+            <div id="notification-queue"></div>
+
+        </div>
+        <script src="javascript/functions.js"></script>
+        <script src="javascript/events.js"></script>
+    </body>
+</html>
