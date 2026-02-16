@@ -1,21 +1,23 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{header, StatusCode};
 use axum::Json;
 use axum::response::{IntoResponse, Response};
 use tokio_util::io::ReaderStream;
-use crate::structs::FileEntry;
+use crate::structs::{AppState, FileEntry, MetaFile};
 
-pub async fn handle_path(base_dir: String, path: String) -> Result<Response, StatusCode> {
+pub async fn handle_path(state: Arc<AppState>, path: String) -> Result<Response, StatusCode> {
 
+    let base_dir = state.config.base_directory.clone();
     let root = Path::new(&base_dir);
     let resolved = resolve_safe_path(&root, &path)?;
 
     if resolved.is_dir() {
         let entries = tokio::task::spawn_blocking(move || {
-            list_directory_sync(&resolved)
+            list_directory_sync(&resolved, path, &state.meta)
         })
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
@@ -28,22 +30,27 @@ pub async fn handle_path(base_dir: String, path: String) -> Result<Response, Sta
         Err(StatusCode::NOT_FOUND)
     }
 }
-pub fn list_directory_sync(path: &Path) -> io::Result<Vec<FileEntry>> {
+pub fn list_directory_sync(absolute_path: &Path, relative_path: String, user_meta: &MetaFile) -> io::Result<Vec<FileEntry>> {
 
     let mut entries = Vec::<FileEntry>::new();
 
-    for entry in fs::read_dir(path)? {
-        let entry = entry?;
-        let metadata = entry.metadata()?;
+    for entry in fs::read_dir(absolute_path)? {
 
-        let is_dir = metadata.is_dir();
-        let size = if is_dir { 0 } else { metadata.len() };
+        let entry = entry?;
+        let file_meta = entry.metadata()?;
+        let user_file_meta = user_meta.get(&normalize_path(&format!("{}\\{}", &relative_path, entry.file_name().display())));
+
+        // Skip if file should be hidden
+        if user_file_meta.hidden { continue; }
+
+        let is_dir = file_meta.is_dir();
+        let size = if is_dir { 0 } else { file_meta.len() };
 
         entries.push(FileEntry {
             name: entry.file_name().to_string_lossy().to_string(),
             size,
-            created: metadata.created().ok(),
-            modified: metadata.modified().ok(),
+            created: file_meta.created().ok(),
+            modified: file_meta.modified().ok(),
             is_dir,
         });
     }

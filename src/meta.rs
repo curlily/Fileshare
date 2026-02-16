@@ -20,6 +20,8 @@ pub fn load_or_create_meta(path: impl AsRef<Path>) -> anyhow::Result<MetaFile> {
     let meta: MetaFile = toml::from_str(&contents)
         .context("Failed to parse TOML meta")?;
 
+    println!("{:?}", meta);
+
     Ok(meta)
 }
 
@@ -27,11 +29,11 @@ fn write_default_meta(path: &Path) -> std::io::Result<()> {
     let default = r#"
 [files]
 
-# ["files.example.txt"]
+# [files."example.txt"]
 # hidden = true
 # tokens = []
 
-# ["files.directory/example.txt"]
+# [files."directory/example.txt"]
 # password_hash = ""
 "#;
 

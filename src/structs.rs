@@ -34,9 +34,13 @@ impl MetaFile {
 
         MetaFile { files }
     }
+
+    pub fn get(&self, path: &str) -> FileMeta {
+        self.files.get(path).cloned().unwrap_or_default()
+    }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct FileMeta {
     #[serde(default)]
     pub hidden: bool,

@@ -1,4 +1,3 @@
-use std::fs::Metadata;
 use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::Context;
@@ -13,7 +12,6 @@ pub mod structs;
 mod meta;
 
 use config::load_or_create_config;
-use crate::config::Config;
 use crate::meta::load_or_create_meta;
 use crate::structs::AppState;
 
@@ -30,7 +28,7 @@ async fn main() {
         .display()
         .to_string();
 
-    let mut meta = load_or_create_meta("Meta.toml")
+    let meta = load_or_create_meta("Meta.toml")
         .context("Loading meta file")
         .unwrap();
 

@@ -8,8 +8,7 @@ use crate::services::filesystem;
 pub async fn handle_root(
     State(state): State<Arc<AppState>>,
 ) -> Result<Response, StatusCode> {
-    println!("Handling root");
-    filesystem::handle_path(state.config.base_directory.clone(), "".to_string()).await
+    filesystem::handle_path(state, "".to_string()).await
 }
 
 pub async fn handle_files(
@@ -17,6 +16,5 @@ pub async fn handle_files(
     Path(path): Path<String>,
 ) -> Result<Response, StatusCode> {
     let path = path.trim_start_matches('/');
-    println!("Handling files: {}", path);
-    filesystem::handle_path(state.config.base_directory.clone(), path.to_string()).await
+    filesystem::handle_path(state, path.to_string()).await
 }
