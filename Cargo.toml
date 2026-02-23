@@ -7,7 +7,15 @@ edition = "2024"
 axum = "0.8.8"
 tokio = { version = "1.49.0", features = ["full"] }
 serde = { version = "1.0.228", features = ["derive"] }
-toml = "1.0.1+spec-1.1.0"
+toml = "1.0.1"
 anyhow = "1.0"
 tokio-util = { version = "0.7.18", features = ["io"] }
-tower-http = { version = "0.6.8", features = ["fs", "normalize-path"] }
+tower-http = { version = "0.6.8", features = ["fs", "normalize-path", "trace"] }
+tracing-subscriber = {  version = "0.3.22", features = ["fmt", "env-filter"] }
+rand = "0.10.0"
+time = {  version = "0.3.47", features = ["serde", "parsing", "formatting"] }
+argon2 = "0.5.3"
+rand_core = {  version = "0.6.4", features = ["getrandom"] }
+clap = { version = "4.5.59", features = ["derive"] }
+notify = "8.2.0"
+nix = "0.31.1"

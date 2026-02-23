@@ -1,44 +1,25 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc};
 use axum::body::Body;
 use axum::http::{header, StatusCode};
-use axum::Json;
-use axum::response::{IntoResponse, Response};
+use axum::response::{Response};
 use tokio_util::io::ReaderStream;
-use crate::structs::{AppState, FileEntry, MetaFile};
+use crate::structs::{AppState, FileEntry};
 
-pub async fn handle_path(state: Arc<AppState>, path: String) -> Result<Response, StatusCode> {
-
-    let base_dir = state.config.base_directory.clone();
-    let root = Path::new(&base_dir);
-    let resolved = resolve_safe_path(&root, &path)?;
-
-    if resolved.is_dir() {
-        let entries = tokio::task::spawn_blocking(move || {
-            list_directory_sync(&resolved, path, &state.meta)
-        })
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-        Ok(Json(entries).into_response())
-    } else if resolved.is_file() {
-        stream_file(resolved).await
-    } else {
-        Err(StatusCode::NOT_FOUND)
-    }
-}
-pub fn list_directory_sync(absolute_path: &Path, relative_path: String, user_meta: &MetaFile) -> io::Result<Vec<FileEntry>> {
+pub fn list_directory(path: &Path, state: Arc<AppState>) -> io::Result<Vec<FileEntry>> {
 
     let mut entries = Vec::<FileEntry>::new();
 
-    for entry in fs::read_dir(absolute_path)? {
+    let relative_path = path.strip_prefix(Path::new(&state.config.base_directory)).unwrap();
+
+    for entry in fs::read_dir(path)? {
 
         let entry = entry?;
         let file_meta = entry.metadata()?;
-        let user_file_meta = user_meta.get(&normalize_path(&format!("{}\\{}", &relative_path, entry.file_name().display())));
+        let meta_path = &normalize_path(&format!("{}\\{}", relative_path.to_string_lossy(), entry.file_name().display()));
+        let user_file_meta = state.meta.read().unwrap().get(meta_path);
 
         // Skip if file should be hidden
         if user_file_meta.hidden { continue; }
@@ -52,6 +33,7 @@ pub fn list_directory_sync(absolute_path: &Path, relative_path: String, user_met
             created: file_meta.created().ok(),
             modified: file_meta.modified().ok(),
             is_dir,
+            requires_password: user_file_meta.password_hash.is_some(),
         });
     }
 
@@ -64,24 +46,24 @@ pub fn list_directory_sync(absolute_path: &Path, relative_path: String, user_met
     Ok(entries)
 }
 
-async fn stream_file(path: PathBuf) -> Result<Response, StatusCode> {
+pub async fn stream_file(path: PathBuf) -> Result<Response, StatusCode> {
 
     let file = tokio::fs::File::open(&path).await.map_err(|_| StatusCode::NOT_FOUND)?;
 
-    let metadata = file
+    let file_meta = file
         .metadata()
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let size = metadata.len();
-
-    let stream = ReaderStream::new(file);
-    let body = Body::from_stream(stream);
 
     let filename = path
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("file");
+
+    let size = file_meta.len();
+
+    let stream = ReaderStream::new(file);
+    let body = Body::from_stream(stream);
 
     Response::builder()
         .header(header::CONTENT_TYPE, "application/octet-stream")

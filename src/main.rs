@@ -1,53 +1,46 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::Context;
-use axum::Router;
-use axum::routing::get;
-use tower_http::services::{ServeDir, ServeFile};
+use clap::Parser;
 
 mod handlers;
 mod config;
-mod services;
 pub mod structs;
 mod meta;
+mod token;
+mod crypto;
+mod cli;
+mod app;
+pub mod filesystem;
 
-use config::load_or_create_config;
-use crate::meta::load_or_create_meta;
-use crate::structs::AppState;
+use crate::app::{kill_app, run_app};
+use crate::cli::{handle_meta_command, Cli, Commands};
+use crate::config::load_or_create_config;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
+
+    let cli = Cli::parse();
 
     let mut config = load_or_create_config("Config.toml")
-        .context("Loading config file")
-        .unwrap();
+        .context("Loading config file")?;
 
-    config.base_directory = PathBuf::from(&config.base_directory)
-        .canonicalize()
-        .expect("Invalid base directory")
-        .display()
-        .to_string();
+    config.base_directory = config.base_directory.canonicalize()?;
 
-    let meta = load_or_create_meta("Meta.toml")
-        .context("Loading meta file")
-        .unwrap();
+    let config = Arc::new(config);
 
-    let address = format!("{}:{}", config.server.host, config.server.port.to_string());
+    match cli.command {
+        Commands::Start => {
+            run_app(config).await;
+        }
 
-    // build our application with a single route
-    let app = Router::new()
-        // API
-        .route("/api/files", get(handlers::handle_root))
-        .route("/api/files{*path}", get(handlers::handle_files))
-        // Frontend (catch-all)
-        .fallback_service(
-            ServeDir::new("client")
-                .fallback(ServeFile::new("client/index.html"))
-        )
-        .with_state(Arc::new(AppState { config, meta }));
+        Commands::Stop => {
+            kill_app()?;
+        }
 
-    // run our app with hyper, listening globally on configured address
-    let listener = tokio::net::TcpListener::bind(&address).await.unwrap();
-    println!("Server started successfully at {:?}", &address);
-    axum::serve(listener, app).await.unwrap();
+        Commands::Meta { action } => {
+            handle_meta_command(config, action)?;
+        }
+    }
+
+    Ok(())
 }

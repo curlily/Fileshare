@@ -77,6 +77,11 @@ async function loadDirectory() {
                 const next = `${path}/${entry.name}`.replace("//", "/");
                 history.pushState({}, "", next);
                 loadDirectory();
+            } else if (entry.requires_password) {
+
+                const password = prompt("Password");
+
+                window.location.href = `api/files/${path}/${entry.name}?password=${password}`;
             } else {
                 window.location.href = `api/files/${path}/${entry.name}`;
             }

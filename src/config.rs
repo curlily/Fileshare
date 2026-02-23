@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 use serde::{Deserialize, Serialize};
 use anyhow::Context;
@@ -8,24 +8,17 @@ use anyhow::Context;
 #[serde(default)] // <- important
 pub struct Config {
     pub server: ServerConfig,
-    pub logging: LoggingConfig,
-    pub base_directory: String,
+    pub base_directory: PathBuf,
+    pub meta_directory: PathBuf,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct LoggingConfig {
-    pub level: String,
-    pub file: Option<String>,
-}
-
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -33,29 +26,8 @@ impl Default for Config {
                 host: "0.0.0.0".into(),
                 port: 8080,
             },
-            logging: LoggingConfig {
-                level: "info".into(),
-                file: None,
-            },
             base_directory: ".".into(),
-        }
-    }
-}
-
-impl Default for ServerConfig {
-    fn default() -> Self {
-        Self {
-            host: "0.0.0.0".into(),
-            port: 8080,
-        }
-    }
-}
-
-impl Default for LoggingConfig {
-    fn default() -> Self {
-        Self {
-            level: "info".into(),
-            file: None,
+            meta_directory: ".".into(),
         }
     }
 }
