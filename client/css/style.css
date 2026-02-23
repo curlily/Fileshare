@@ -1,6 +1,22 @@
-#root {
-    transition: filter 0.5s ease;
+body {
+    margin: 0;
     font-family: 'SF Pro Rounded', Helvetica Neue, Helvetica, Arial, sans-serif;
+}
+
+.dim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(2px);
+}
+
+.hidden {
+    display: none;
+}
+
+.no-interact {
+    pointer-events: none;
 }
 
 #title {
@@ -24,81 +40,35 @@
     flex-direction: column;
 }
 
+.fixed-centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .blur {
     filter: blur(2px);
     user-select: none;
     pointer-events: none;
 }
 
-/* Container for the download queue */
-#notification-queue {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    z-index: 1000;
-}
-
-/* Individual download notification */
-.download-notification {
-    background-color: #fff;
-    border-left: 5px solid #4caf50;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    margin-bottom: 10px;
-    padding: 15px;
-    border-radius: 4px;
-}
-
-/* File name */
-.download-notification .file-name {
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-
-/* Progress bar container */
-.download-notification .progress-container {
-    background-color: #f1f1f1;
-    border-radius: 2px;
-    overflow: hidden;
-    height: 10px;
-}
-
-/* Progress bar */
-.download-notification .progress-bar {
-    background-color: #4caf50;
-    height: 100%;
-    width: 0%;
-    transition: width 0.2s ease;
-}
-
-/* From Uiverse.io by ozgeozkaraa01 */
-.group {
-    display: flex;
-    line-height: 30px;
-    align-items: center;
-    position: relative;
-    max-width: 200px;
-    transition: .5s ease;
-}
-
-.input {
-    width: 100%;
-    height: 45px;
-    line-height: 30px;
-    padding: 0 5rem 0 3rem;
+input {
+    width: 256px;
+    height: 16px;
     border: 2px solid transparent;
-    border-radius: 10px;
+    border-radius: 5px;
     outline: none;
     background-color: #f8fafc;
     color: #0d0c22;
     transition: .5s ease;
 }
 
-.input::placeholder {
+input::placeholder {
     color: #94a3b8;
 }
 
-.input:focus, input:hover {
+input:focus, input:hover {
     outline: none;
     border-color: rgba(129, 140, 248);
     background-color: #fff;

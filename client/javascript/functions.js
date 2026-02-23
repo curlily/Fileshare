@@ -71,17 +71,16 @@ async function loadDirectory() {
 
         tr.style.cursor = "pointer";
 
-        tr.onclick = () => {
+        tr.onclick = async () => {
 
             if (entry.is_dir) {
                 const next = `${path}/${entry.name}`.replace("//", "/");
                 history.pushState({}, "", next);
-                loadDirectory();
+                await loadDirectory();
             } else if (entry.requires_password) {
-
-                const password = prompt("Password");
-
-                window.location.href = `api/files/${path}/${entry.name}?password=${password}`;
+                password_prompt(entry.name)
+                    .then((password) => { window.location.href = `api/files/${path}/${entry.name}?password=${password}`; })
+                    .catch(() => {});
             } else {
                 window.location.href = `api/files/${path}/${entry.name}`;
             }
@@ -100,6 +99,52 @@ async function loadDirectory() {
         tr.append(td);
 
         return tr;
+    }
+}
+
+async function password_prompt(filename) {
+
+    const root = document.getElementById("root");
+
+    const overlay = document.getElementById("overlay");
+    overlay.classList.add("dim");
+
+    const wrapper = document.getElementById("password-wrapper");
+    wrapper.classList.remove("hidden");
+
+    const input = document.getElementById("password-input");
+    const label = wrapper.querySelector("label");
+
+    return new Promise((resolve, reject) => {
+
+        root.classList.add("no-interact");
+        label.innerText = "Password for " + filename;
+        input.focus()
+
+        input.onkeyup = ((event) => {
+            if (event.key === "Enter") {
+                const password = input.innerText;
+                close_prompt();
+                password ? resolve(password) : reject();
+            }
+
+            if (event.key === "Escape" || event.key === 'Backspace' && input.innerText === "") {
+                close_prompt();
+                reject();
+            }
+        });
+        /*
+        input.onblur = (() => {
+            close_prompt();
+            reject();
+        });*/
+    });
+
+    function close_prompt() {
+        overlay.classList.remove("dim");
+        wrapper.classList.add("hidden");
+        root.classList.remove("no-interact");
+        input.innerText = "";
     }
 }
 

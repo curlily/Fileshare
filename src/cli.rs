@@ -62,11 +62,14 @@ pub enum MetaCommand {
         path: PathBuf,
     },
 
-    /// Hide or unhide a file
-    Hidden {
+    /// Hide a file
+    Hide {
         path: PathBuf,
-        #[arg(long)]
-        hidden: bool,
+    },
+
+    /// Unhide a file
+    Unhide {
+        path: PathBuf,
     },
 }
 
@@ -79,7 +82,21 @@ pub fn handle_meta_command(config: Arc<Config>, cmd: MetaCommand) -> anyhow::Res
             let path_string = path.to_string_lossy().into_owned();
             let mut meta = load_or_create_meta(&get_meta_path(&config))?;
             let file_meta = meta.files.entry(path_string.clone()).or_insert_with(FileMeta::default);
-            let expiry = expires.and_then(|s| OffsetDateTime::parse(&s, &time::format_description::well_known::Rfc3339).ok());
+
+            let expiry = expires.and_then(|s| {
+                let now = OffsetDateTime::now_utc();
+
+                if let Some(days) = s.strip_suffix("d") {
+                    days.parse::<i64>().ok().map(|d| now + time::Duration::days(d))
+                } else if let Some(hours) = s.strip_suffix("h") {
+                    hours.parse::<i64>().ok().map(|h| now + time::Duration::hours(h))
+                } else if let Some(minutes) = s.strip_suffix("m") {
+                    minutes.parse::<i64>().ok().map(|m| now + time::Duration::minutes(m))
+                } else {
+                    None
+                }
+            });
+
             let token = generate_token(expiry);
 
             file_meta.tokens.push(token.clone());
@@ -136,16 +153,28 @@ pub fn handle_meta_command(config: Arc<Config>, cmd: MetaCommand) -> anyhow::Res
             println!("Password for {} removed", path.iter().last().unwrap().to_string_lossy());
         }
 
-        MetaCommand::Hidden { path, hidden } => {
+        MetaCommand::Hide { path } => {
 
             let mut meta = load_or_create_meta(&get_meta_path(&config))?;
             let file_meta = meta.files.entry(path.to_string_lossy().into_owned()).or_insert_with(FileMeta::default);
 
-            file_meta.hidden = hidden;
+            file_meta.hidden = true;
 
             save_meta(&meta)?;
 
-            println!("{} is {}hidden", path.iter().last().unwrap().to_string_lossy(), if !hidden { "no longer" } else { "" });
+            println!("{} is hidden", path.iter().last().unwrap().to_string_lossy());
+        }
+
+        MetaCommand::Unhide { path } => {
+
+            let mut meta = load_or_create_meta(&get_meta_path(&config))?;
+            let file_meta = meta.files.entry(path.to_string_lossy().into_owned()).or_insert_with(FileMeta::default);
+
+            file_meta.hidden = false;
+
+            save_meta(&meta)?;
+
+            println!("{} is no longer hidden", path.iter().last().unwrap().to_string_lossy());
         }
     }
 
