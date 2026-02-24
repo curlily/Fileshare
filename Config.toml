@@ -1,6 +1,0 @@
-# Base directory for file browser
-base_directory = 'C:\Users\jloehnert\Documents\Projektarbeit'
-
-[server]
-host = "127.0.0.1"
-port = 8080
