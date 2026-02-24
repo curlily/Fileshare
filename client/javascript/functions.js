@@ -1,4 +1,11 @@
-async function loadDirectory() {
+import icon_map from './file-icons.js';
+
+function get_file_icon(ext) {
+    if (!ext) return "📄";
+    return icon_map[ext.toLowerCase()] ?? "📄";
+}
+
+export async function load_directory() {
     const path = window.location.pathname;
 
     //document.getElementById("path").textContent = path.replaceAll("/", " / ").trim()
@@ -49,7 +56,7 @@ async function loadDirectory() {
         a.innerText = name
         a.onclick = () => {
             history.pushState({}, "", target);
-            loadDirectory();
+            load_directory();
         }
 
         return a;
@@ -59,14 +66,14 @@ async function loadDirectory() {
         const tr = document.createElement("tr");
         const ext = entry.name.split('.').pop().toLowerCase();
 
-        const icon = entry.is_dir ? "📁" : getFileIcon(ext);
-        //const lock = protectedFlag ? ' 🔒' : '';
+        const icon = entry.is_dir ? "📁" : get_file_icon(ext);
+        const lock = entry.requires_password ? ' 🔒' : '';
 
         tr.innerHTML = `
-        <td>${icon} ${entry.name}</a></td>
-        <td>${systemTimeToDateString(entry.created)}</td>
-        <td>${systemTimeToDateString(entry.modified)}</td>
-        <td>${entry.is_dir ? "-" : format_bytes(entry.size)}</td>
+        <td>${icon}${lock} ${entry.name}</a></td>
+        <td>${system_time_to_date_string(entry.created)}</td>
+        <td>${system_time_to_date_string(entry.modified)}</td>
+        <td>${entry.is_dir ? "" : format_bytes(entry.size)}</td>
         `;
 
         tr.style.cursor = "pointer";
@@ -76,13 +83,11 @@ async function loadDirectory() {
             if (entry.is_dir) {
                 const next = `${path}/${entry.name}`.replace("//", "/");
                 history.pushState({}, "", next);
-                await loadDirectory();
+                await load_directory();
             } else if (entry.requires_password) {
-                password_prompt(entry.name)
-                    .then((password) => { window.location.href = `api/files/${path}/${entry.name}?password=${password}`; })
-                    .catch(() => {});
+                await download_protected_file(path, entry);
             } else {
-                window.location.href = `api/files/${path}/${entry.name}`;
+                await download_file(path, entry);
             }
         };
 
@@ -102,7 +107,7 @@ async function loadDirectory() {
     }
 }
 
-async function password_prompt(filename) {
+async function download_protected_file(path, entry) {
 
     const root = document.getElementById("root");
 
@@ -118,63 +123,96 @@ async function password_prompt(filename) {
     return new Promise((resolve, reject) => {
 
         root.classList.add("no-interact");
-        label.innerText = "Password for " + filename;
+        label.innerText = "Password for " + entry.name;
         input.focus()
 
-        input.onkeyup = ((event) => {
+        let last_input;
+
+        input.onkeyup = (async (event) => {
+
+            input.classList.remove('error');
+
             if (event.key === "Enter") {
-                const password = input.innerText;
-                close_prompt();
-                password ? resolve(password) : reject();
+                const password = input.value;
+
+                let success = await download_file(path, entry, password);
+                if (success) {
+                    close_password_prompt()
+                    resolve();
+                }
             }
 
-            if (event.key === "Escape" || event.key === 'Backspace' && input.innerText === "") {
-                close_prompt();
-                reject();
+            if (event.key === "Escape" || event.key === 'Backspace' && last_input === "") {
+                close_password_prompt()
+                resolve();
             }
+
+            last_input = input.value;
         });
-        /*
-        input.onblur = (() => {
-            close_prompt();
-            reject();
-        });*/
     });
-
-    function close_prompt() {
-        overlay.classList.remove("dim");
-        wrapper.classList.add("hidden");
-        root.classList.remove("no-interact");
-        input.innerText = "";
-    }
 }
 
-function getFileIcon(ext) {
-    switch (ext) {
-        case "jpg":
-        case "jpeg":
-        case "png":
-        case "gif":
-            return "🖼️";
-        case "mp4":
-        case "mov":
-        case "avi":
-            return "🎞️";
-        case "mp3":
-        case "wav":
-            return "🎵";
-        case "pdf":
-            return "📄";
-        case "zip":
-        case "rar":
-            return "🗃️";
-        case "txt":
-        case "md":
-        case "doc":
-        case "docx":
-            return "📝";
-        default:
-            return "📄";
+function close_password_prompt() {
+
+    const root = document.getElementById("root");
+    const overlay = document.getElementById("overlay");
+    const wrapper = document.getElementById("password-wrapper");
+    const input = document.getElementById("password-input");
+
+    overlay.classList.remove("dim");
+    wrapper.classList.add("hidden");
+    root.classList.remove("no-interact");
+    input.value = "";
+}
+
+async function download_file(path, entry, password) {
+
+    let route = `/api/files/${path}/${entry.name}`;
+
+    if(password) {
+        route += `?password=${encodeURIComponent(password)}`;
     }
+
+    const res = await fetch(route);
+
+    if (!res.ok) {
+        if (res.status === 401 && entry.requires_password) {
+            show_password_error()
+        } else {
+            console.error(`Download failed (${res.status})`);
+        }
+        return false;
+    }
+
+    // Read file as blob
+    const blob = await res.blob();
+
+    // Create temporary download link
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = entry.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+
+    return true;
+}
+
+function show_password_error() {
+
+    const input = document.getElementById("password-input");
+
+    input.classList.add('error', 'shake');
+
+    // Remove shake so it can be retriggered
+    input.addEventListener(
+        'animationend',
+        () => input.classList.remove('shake'),
+        { once: true }
+    );
 }
 
 function format_bytes(bytes) {
@@ -184,7 +222,7 @@ function format_bytes(bytes) {
     return (bytes / Math.pow(1024, i)).toFixed(2) + " " + sizes[i];
 }
 
-function systemTimeToDateString(st) {
+function system_time_to_date_string(st) {
     const millis =
         st.secs_since_epoch * 1000 +
         Math.floor(st.nanos_since_epoch / 1_000_000);

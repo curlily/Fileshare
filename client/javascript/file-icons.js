@@ -1,0 +1,20 @@
+export default {
+  jpg: "🖼️",
+  jpeg: "🖼️",
+  png: "🖼️",
+  gif: "🖼️",
+  mp4: "🎞️",
+  mov: "🎞️",
+  avi: "🎞️",
+  mp3: "🎵",
+  wav: "🎵",
+  pdf: "📄",
+  zip: "🗃️",
+  rar: "🗃️",
+  "7z": "🗃️",
+  txt: "📝",
+  md: "📝",
+  doc: "📝",
+  docx: "📝",
+  rs: "🦀"
+};

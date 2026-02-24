@@ -40,6 +40,10 @@ th, td {
     text-align: left;
 }
 
+/* Align last column (size) right */
+table td:last-child {
+    text-align: right;
+}
 
 table tr td:first-child,
 table tr th:first-child {

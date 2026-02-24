@@ -66,6 +66,7 @@ pub fn kill_app() -> anyhow::Result<()> {
     }
     
     println!("Killed pid {}", &pid);
+    std::fs::remove_file("fileshare.pid")?;
 
     Ok(())
 }

@@ -1,2 +1,4 @@
-window.addEventListener("DOMContentLoaded", loadDirectory);
-window.addEventListener("popstate", loadDirectory);
+import {load_directory} from "./functions.js";
+
+window.addEventListener("DOMContentLoaded", load_directory);
+window.addEventListener("popstate", load_directory);

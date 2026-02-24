@@ -54,9 +54,9 @@ body {
 }
 
 input {
-    width: 256px;
-    height: 16px;
-    border: 2px solid transparent;
+    width: 246px;
+    height: 20px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 5px;
     outline: none;
     background-color: #f8fafc;
@@ -81,4 +81,37 @@ input:focus, input:hover {
     fill: none;
     width: 1rem;
     height: 1rem;
+}
+
+#password-wrapper {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    max-width: min-content;
+    text-align: center;
+    transition: all 0.5s ease;
+}
+
+#password-input {
+    margin-top: 0.8rem;
+}
+
+/* Error state */
+#password-input.error {
+    border-color: #e53935;
+    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.25);
+}
+
+/* Shake animation */
+@keyframes shake {
+    0%   { transform: translateX(0); }
+    20%  { transform: translateX(-6px); }
+    40%  { transform: translateX(6px); }
+    60%  { transform: translateX(-4px); }
+    80%  { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}
+
+#password-input.shake {
+    animation: shake 0.35s ease;
 }
