@@ -120,13 +120,13 @@ async function download_protected_file(path, entry) {
     const input = document.getElementById("password-input");
     const label = wrapper.querySelector("label");
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
 
         root.classList.add("no-interact");
         label.innerText = "Password for " + entry.name;
         input.focus()
 
-        let last_input;
+        let last_input = input.value;
 
         input.onkeyup = (async (event) => {
 
@@ -142,13 +142,20 @@ async function download_protected_file(path, entry) {
                 }
             }
 
-            if (event.key === "Escape" || event.key === 'Backspace' && last_input === "") {
+            if (event.key === 'Backspace' && last_input === "") {
                 close_password_prompt()
                 resolve();
             }
 
             last_input = input.value;
         });
+
+        document.onkeyup = (event) => {
+            if (event.key === "Escape") {
+                close_password_prompt()
+                resolve();
+            }
+        }
     });
 }
 

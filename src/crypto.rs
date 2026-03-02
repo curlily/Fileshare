@@ -3,10 +3,8 @@ use argon2::password_hash::SaltString;
 use rand_core::OsRng;
 
 pub fn hash_password(password: &str) -> Result<String, password_hash::Error> {
-    // Argon2 default parameters
+    
     let argon2 = Argon2::default();
-
-    // Salt is generated for you
     let salt = SaltString::generate(&mut OsRng);
 
     let password_hash = argon2.hash_password(password.as_bytes(), &salt)?;

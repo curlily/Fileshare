@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::{Arc, RwLock};
 use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::macros::format_description;
+use time::{OffsetDateTime, UtcOffset};
 use crate::config::Config;
 use crate::filesystem::normalize_path;
 
@@ -41,6 +43,18 @@ impl MetaFile {
     pub fn get(&self, path: &str) -> FileMeta {
         self.files.get(path).cloned().unwrap_or_default()
     }
+
+    pub fn clean_tokens(&mut self) {
+        for (path, meta) in &mut self.files {
+            meta.tokens.retain(|t| {
+                let keep = t.expires.map_or(true, |e| e > OffsetDateTime::now_utc());
+                if !keep {
+                    println!("Removed expired token for {}: {}", path, t);
+                }
+                keep
+            });
+        }
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -55,10 +69,49 @@ pub struct FileMeta {
     pub tokens: Vec<Token>,
 }
 
+
+impl fmt::Display for FileMeta {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Hidden field
+        write!(f, "Hidden: {}\n", if self.hidden { "Yes" } else { "No" })?;
+
+        // Password field
+        write!(f, "Password: {}\n", if self.password_hash.is_some() { "Yes" } else { "No" })?;
+
+        // Tokens, only if there are any
+        if !self.tokens.is_empty() {
+            writeln!(f, "Token ({}):", self.tokens.len())?;
+            for token in &self.tokens {
+                writeln!(f, "  - {}", token)?;
+            }
+        } else {
+            writeln!(f, "Tokens: None")?;
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct Token {
     pub value: String,
     pub expires: Option<OffsetDateTime>
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(expires) = &self.expires {
+            let local_time = expires.to_offset(
+                UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC)
+            );
+            let formatted = local_time
+                .format(&format_description!("[year]-[month]-[day] [hour]:[minute]"))
+                .unwrap_or_else(|_| "invalid date".to_string());
+            write!(f, "{} (expires: {})", self.value, formatted)
+        } else {
+            write!(f, "{}", self.value)
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]

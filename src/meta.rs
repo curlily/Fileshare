@@ -28,7 +28,7 @@ pub fn reload_meta(state: &AppState, path: &PathBuf) -> anyhow::Result<()> {
     let new_meta = load_or_create_meta(path)?;
     let mut guard = state.meta.write().unwrap();
     *guard = new_meta;
-    println!("meta.toml reloaded");
+    println!("Meta.toml reloaded");
     Ok(())
 }
 

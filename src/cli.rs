@@ -46,8 +46,8 @@ pub enum MetaCommand {
         token: String,
     },
 
-    /// List the tokens of a file
-    ListToken {
+    /// List the meta attributes of a file
+    List {
         path: PathBuf,
     },
 
@@ -102,7 +102,15 @@ pub fn handle_meta_command(config: Arc<Config>, cmd: MetaCommand) -> anyhow::Res
             file_meta.tokens.push(token.clone());
 
             save_meta(&meta)?;
-            println!("Token for {} created: {:?}", path.iter().last().unwrap().to_string_lossy(), token);
+
+            let url = format!("http://{}:{}/api/files/{}?token={}",
+                config.server.host,
+                config.server.port,
+                path_string,
+                token.value
+            );
+
+            println!("Token for {} created: {}\nURL: {}", path.iter().last().unwrap().to_string_lossy(), token, url);
         }
 
         MetaCommand::RemoveToken { path, token } => {
@@ -117,13 +125,13 @@ pub fn handle_meta_command(config: Arc<Config>, cmd: MetaCommand) -> anyhow::Res
             println!("Token for {} removed", path.iter().last().unwrap().to_string_lossy());
         }
 
-        MetaCommand::ListToken { path } => {
+        MetaCommand::List { path } => {
 
             let path_string = path.to_string_lossy().into_owned();
             let mut meta = load_or_create_meta(&get_meta_path(&config))?;
             let file_meta = meta.files.entry(path_string.clone()).or_insert_with(FileMeta::default);
 
-            println!("Existing tokens for {}: {:?}", path.iter().last().unwrap().to_string_lossy(), file_meta.tokens);
+            println!("Metadata for {}\n{}", path.iter().last().unwrap().to_string_lossy(), file_meta);
         }
 
         MetaCommand::SetPassword { path, password } => {

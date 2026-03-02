@@ -7,16 +7,19 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use crate::config::Config;
 use crate::handlers;
-use crate::meta::{get_meta_path, load_or_create_meta, start_meta_watcher};
+use crate::meta::{get_meta_path, load_or_create_meta, save_meta, start_meta_watcher};
 use crate::structs::AppState;
 
 pub async fn run_app(config: Arc<Config>) {
 
     std::fs::write("fileshare.pid", std::process::id().to_string()).unwrap();
 
-    let meta = load_or_create_meta(&get_meta_path(&config))
+    let mut meta = load_or_create_meta(&get_meta_path(&config))
         .context("Loading meta file")
         .unwrap();
+
+    meta.clean_tokens();
+    save_meta(&meta).unwrap();
 
     let address = format!("{}:{}", config.server.host, config.server.port.to_string());
 
