@@ -23,7 +23,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             server: ServerConfig {
-                host: "0.0.0.0".into(),
+                host: "localhost".into(),
                 port: 8080,
             },
             base_directory: ".".into(),
@@ -60,7 +60,7 @@ fn write_default_config(path: &Path) -> std::io::Result<()> {
 base_directory = 'C:\Users\Public\Documents'
 
 [server]
-host = "127.0.0.1"
+host = "localhost"
 port = 8080
 "#;
 
