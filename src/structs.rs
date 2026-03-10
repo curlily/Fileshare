@@ -2,11 +2,16 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, RwLock};
 use std::time::SystemTime;
+use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 use crate::config::Config;
 use crate::filesystem::normalize_path;
+
+#[derive(RustEmbed)]
+#[folder = "client/"]
+pub struct Assets;
 
 pub struct AppState {
     pub config: Arc<Config>,

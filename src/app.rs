@@ -1,14 +1,32 @@
 use std::sync::{Arc, RwLock};
 use anyhow::Context;
+use axum::http::{header, StatusCode, Uri};
+use axum::response::Response;
 use axum::Router;
 use axum::routing::get;
-use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use crate::config::Config;
 use crate::handlers;
 use crate::meta::{get_meta_path, load_or_create_meta, save_meta, start_meta_watcher};
-use crate::structs::AppState;
+use crate::structs::{AppState, Assets};
+
+async fn static_handler(uri: Uri) -> Response {
+    let path = uri.path().trim_start_matches('/');
+
+    let (path, content) = match Assets::get(path) {
+        Some(content) => (path.to_string(), content),
+        None => ("index.html".to_string(), Assets::get("index.html").unwrap()),
+    };
+
+    let mime = mime_guess::from_path(&path).first_or_octet_stream();
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, mime.as_ref())
+        .body(axum::body::Body::from(content.data))
+        .unwrap()
+}
 
 pub async fn run_app(config: Arc<Config>) {
 
@@ -35,12 +53,9 @@ pub async fn run_app(config: Arc<Config>) {
     let app = Router::new()
         // API
         .route("/api/files", get(handlers::handle_root))
-        .route("/api/files{*path}", get(handlers::handle_files))
+        .route("/api/files{*path}", get(handlers::handle_files).head(handlers::handle_files))
         // Frontend (catch-all)
-        .fallback_service(
-            ServeDir::new("client")
-                .fallback(ServeFile::new("client/index.html"))
-        )
+        .fallback(static_handler)
         .with_state(state.clone())
         .layer(TraceLayer::new_for_http());
 

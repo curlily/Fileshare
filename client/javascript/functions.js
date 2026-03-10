@@ -180,7 +180,7 @@ async function download_file(path, entry, password) {
         route += `?password=${encodeURIComponent(password)}`;
     }
 
-    const res = await fetch(route);
+    const res = await fetch(route, { method: "HEAD" });
 
     if (!res.ok) {
         if (res.status === 401 && entry.requires_password) {
@@ -191,19 +191,12 @@ async function download_file(path, entry, password) {
         return false;
     }
 
-    // Read file as blob
-    const blob = await res.blob();
-
-    // Create temporary download link
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
+    const a = document.createElement('a');
+    a.href = route;
     a.download = entry.name;
     document.body.appendChild(a);
     a.click();
-    a.remove();
-
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
 
     return true;
 }
