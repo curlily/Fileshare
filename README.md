@@ -4,6 +4,8 @@ A self-hosted file sharing server written in Rust. Serves a directory over HTTP 
 
 > **Note:** It is strongly recommended to put Fileshare behind a reverse proxy (nginx, Caddy, etc.) to enable HTTPS/TLS before exposing it to a network.
 
+<img width="1466" height="653" alt="Fileshare Web UI" src="https://github.com/user-attachments/assets/4df20e23-4ed5-45c9-9fd4-6670ddca4716" />
+
 ## Features
 
 - **Web UI** - embedded frontend served directly from the binary, no separate deployment needed
