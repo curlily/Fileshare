@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "FilesharingApp"
+name = "Fileshare"
 version = "0.1.0"
 dependencies = [
  "anyhow",
